@@ -1,31 +1,33 @@
 package com.miraz.misattendance
 
 import android.Manifest
+import android.app.AlertDialog
+import android.app.Dialog
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.Window
 import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.miraz.misattendance.databinding.ActivityMainBinding
 import java.io.File
-import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -33,15 +35,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var imageCapture: ImageCapture
     private lateinit var previewView: PreviewView
+    lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         previewView = findViewById(R.id.previewView)
         val captureButton: Button = findViewById(R.id.captureButton)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+
 
         if (allPermissionsGranted()) {
             startCamera()
@@ -50,6 +57,23 @@ class MainActivity : AppCompatActivity() {
         }
 
         captureButton.setOnClickListener { takePhoto() }
+
+
+        binding.visitList.setOnClickListener {
+            val intent = Intent(this, VisitActivity::class.java)
+            startActivity(intent)
+        }
+    }
+
+    private fun showSuccessDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Success")
+        builder.setMessage("Operation was successful.")
+        builder.setPositiveButton("OK") { dialog, _ ->
+            dialog.dismiss()
+        }
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
     }
 
     private fun startCamera() {
@@ -84,34 +108,80 @@ class MainActivity : AppCompatActivity() {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val savedUri = Uri.fromFile(photoFile)
                     Toast.makeText(baseContext, "Photo capture succeeded: $savedUri", Toast.LENGTH_SHORT).show()
-                    uploadImage(photoFile)
+                    showStaffInfoDialog(photoFile)
                 }
             }
         )
     }
 
-    private fun uploadImage(file: File) {
-        val apiService = RetrofitClient.instance.create(ApiService::class.java)
-        val id = RequestBody.create("text/plain".toMediaTypeOrNull(), "21321321")
-        val name = RequestBody.create("text/plain".toMediaTypeOrNull(), "fgfgfgfgsgfd")
-        val requestFile = RequestBody.create("image/jpeg".toMediaTypeOrNull(), file)
-        val body = MultipartBody.Part.createFormData("image", file.name, requestFile)
+    private fun showStaffInfoDialog(photoFile: File) {
+        // Inflate the dialog layout
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_staff_info, null)
+        val etName: EditText = dialogView.findViewById(R.id.etName)
+        val etStaffId: EditText = dialogView.findViewById(R.id.etStaffId)
+        val etDepartment: EditText = dialogView.findViewById(R.id.etDepartment)
+        val etDesignation: EditText = dialogView.findViewById(R.id.etDesignation)
+        val btnSubmit: Button = dialogView.findViewById(R.id.btnSubmit)
 
-        val call = apiService.register(id, name, body)
-        call.enqueue(object : Callback<String> {
-            override fun onResponse(call: Call<String>, response: Response<String>) {
-                if (response.isSuccessful) {
-                    Toast.makeText(this@MainActivity, "Upload succeeded", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "Upload failed: ${response.errorBody()?.string()}", Toast.LENGTH_SHORT).show()
-                }
+        // Create the dialog
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        // Set the submit button click listener
+        btnSubmit.setOnClickListener {
+            val name = etName.text.toString()
+            val staffId = etStaffId.text.toString()
+            val department = etDepartment.text.toString()
+            val designation = etDesignation.text.toString()
+
+            // Handle the input values here, e.g., save to database, update UI, etc.
+            handleStaffInfo(name, staffId, department, designation, photoFile)
+
+            // Dismiss the dialog
+            dialog.dismiss()
+        }
+
+        // Show the dialog
+        dialog.show()
+    }
+
+
+    private fun handleStaffInfo(name: String, staffId: String, department: String, designation: String,file: File) {
+        // Handle the input values, e.g., save to database, update UI, etc.
+
+        insertToAIServer(
+            UploadImageAIServerREQ(
+                name =  name,
+                staff_id = staffId,
+                department = department,
+                designation = designation,
+                image = file
+            )
+        )
+    }
+
+
+
+    private fun insertToAIServer(
+        uploadImageAIServerREQ: UploadImageAIServerREQ
+    ) {
+
+        ApiServices.uploadImageEmbToAIServer(uploadImageAIServerREQ, object : UploadImageEmbListener {
+            override fun success(isSuccess: Boolean, message: String) {
+                Const().showToast(this@MainActivity, "$message")
+                binding.progressBar.visibility= View.GONE
+                showSuccessDialog()
             }
 
-            override fun onFailure(call: Call<String>, t: Throwable) {
-                Toast.makeText(this@MainActivity, "Upload failed: ${t.message}", Toast.LENGTH_SHORT).show()
+            override fun data(imageDatasetRP: ImageDatasetRP) {
+                binding.progressBar.visibility= View.GONE
+                showSuccessDialog()
             }
         })
     }
+
+
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED

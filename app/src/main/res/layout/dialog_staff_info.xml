@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Name" />
+
+    <EditText
+        android:id="@+id/etStaffId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Staff ID"
+        android:inputType="text" />
+
+    <EditText
+        android:id="@+id/etDepartment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Department"
+        android:inputType="text" />
+
+    <EditText
+        android:id="@+id/etDesignation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Designation"
+        android:inputType="text" />
+
+    <Button
+        android:id="@+id/btnSubmit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Submit"
+        android:layout_marginTop="16dp" />
+</LinearLayout>

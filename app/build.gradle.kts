@@ -35,6 +35,7 @@ android {
     }
     buildFeatures {
         buildConfig = true
+        viewBinding =true
     }
 }
 
@@ -48,7 +49,11 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    //Dimension library for every device UI Balance
+    implementation("com.intuit.ssp:ssp-android:1.1.0")
+    implementation("com.intuit.sdp:sdp-android:1.1.0")
 
+    implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation ("androidx.camera:camera-core:1.1.0-alpha08")
     implementation ("androidx.camera:camera-camera2:1.1.0-alpha08")
     implementation ("androidx.camera:camera-lifecycle:1.1.0-alpha08")
@@ -63,4 +68,8 @@ dependencies {
 
     // LoggingInterceptor
     implementation("com.github.ihsanbal:LoggingInterceptor:3.1.0")
+
+
+    // picasso
+    implementation("com.squareup.picasso:picasso:2.8")
 }
