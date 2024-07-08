@@ -9,6 +9,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
+import retrofit2.HttpException
 import retrofit2.Response
 
 
@@ -83,19 +84,45 @@ object ApiServices {
                 .create(ApiInterface::class.java)
         service.registerUser(namePart, idPart, department, designation, file)
             .enqueue(object :
-                Callback<UploadResponse> {
+                Callback<RequestBody> {
                 override fun onResponse(
-                    call: Call<UploadResponse>,
-                    response: Response<UploadResponse>,
+                    call: Call<RequestBody>,
+                    response: Response<RequestBody>,
                 ) {
-                    Log.e("ApiServices", "onResponse: dfsdfsdfsdfsd")
+                    val errorBody = response.errorBody()?.string()
+                    try {
+                        val errorJson = errorBody?.let { JSONObject(it) }
+                        uploadImageEmbListener.success(false, "failed! $errorJson")
+                    } catch (e: JSONException) {
+                        uploadImageEmbListener.success(
+                            false,
+                            "Unable to parse error message."
+                        )
+                    }
                 }
 
-                override fun onFailure(call: Call<UploadResponse>, t: Throwable) {
-                    uploadImageEmbListener.success(
-                        false,
-                        "Response fail check GPU server."
-                    )
+                override fun onFailure(call: Call<RequestBody>, t: Throwable) {
+
+                    if (t is HttpException) {
+                        val errorBody = t.response()?.errorBody()?.string()
+                        if (errorBody != null) {
+                            try {
+                                val jsonObject = JSONObject(errorBody)
+                                uploadImageEmbListener.success(
+                                    false,
+                                    "Error JSON: $jsonObject"
+                                )
+                                Log.d("UPLOAD", "Error JSON: $jsonObject")
+                            } catch (e: Exception) {
+                                Log.e("UPLOAD", "Error parsing JSON in onFailure", e)
+                                uploadImageEmbListener.success(
+                                    false,
+                                    e.toString()
+                                )
+                            }
+                        }
+                    }
+
                 }
             })
     }

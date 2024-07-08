@@ -123,6 +123,11 @@ class MainActivity : AppCompatActivity() {
         val etDesignation: EditText = dialogView.findViewById(R.id.etDesignation)
         val btnSubmit: Button = dialogView.findViewById(R.id.btnSubmit)
 
+
+        etName.setText("test11")
+        etStaffId.setText("123456789")
+        etDepartment.setText("MIS")
+        etDesignation.setText("SE")
         // Create the dialog
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)

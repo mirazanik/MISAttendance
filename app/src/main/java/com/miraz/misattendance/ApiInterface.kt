@@ -28,7 +28,7 @@ interface ApiInterface {
         @Part("department") department: RequestBody,
         @Part("designation") designation: RequestBody,
         @Part image: MultipartBody.Part
-    ): Call<UploadResponse>
+    ): Call<RequestBody>
 
     @GET("customers/app_customer_visited_logs")
     fun visitedLog(
