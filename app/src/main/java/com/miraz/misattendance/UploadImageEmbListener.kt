@@ -6,7 +6,5 @@ package com.miraz.misattendance
  */
 
 interface UploadImageEmbListener {
-    fun success(isSuccess: Boolean, message: String)
-    fun data(imageDatasetRP: ImageDatasetRP)
-
+    fun success(isSuccess: Boolean, message: String,regRP: RegRP)
 }

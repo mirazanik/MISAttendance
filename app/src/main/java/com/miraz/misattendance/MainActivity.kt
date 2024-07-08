@@ -2,21 +2,15 @@ package com.miraz.misattendance
 
 import android.Manifest
 import android.app.AlertDialog
-import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.view.Window
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -65,10 +59,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showSuccessDialog() {
+    private fun showSuccessDialog(regRP: RegRP) {
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("Success")
-        builder.setMessage("Operation was successful.")
+        builder.setTitle("Status: ${regRP.status_code}")
+        builder.setMessage(" ${regRP.message}")
         builder.setPositiveButton("OK") { dialog, _ ->
             dialog.dismiss()
         }
@@ -107,7 +101,11 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val savedUri = Uri.fromFile(photoFile)
-                    Toast.makeText(baseContext, "Photo capture succeeded: $savedUri", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        baseContext,
+                        "Photo capture succeeded: $savedUri",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     showStaffInfoDialog(photoFile)
                 }
             }
@@ -152,12 +150,18 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun handleStaffInfo(name: String, staffId: String, department: String, designation: String,file: File) {
+    private fun handleStaffInfo(
+        name: String,
+        staffId: String,
+        department: String,
+        designation: String,
+        file: File
+    ) {
         // Handle the input values, e.g., save to database, update UI, etc.
 
         insertToAIServer(
             UploadImageAIServerREQ(
-                name =  name,
+                name = name,
                 staff_id = staffId,
                 department = department,
                 designation = designation,
@@ -167,39 +171,36 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
     private fun insertToAIServer(
         uploadImageAIServerREQ: UploadImageAIServerREQ
     ) {
 
-        ApiServices.uploadImageEmbToAIServer(uploadImageAIServerREQ, object : UploadImageEmbListener {
-            override fun success(isSuccess: Boolean, message: String) {
-                Const().showToast(this@MainActivity, "$message")
-                binding.progressBar.visibility= View.GONE
-                showSuccessDialog()
-            }
-
-            override fun data(imageDatasetRP: ImageDatasetRP) {
-                binding.progressBar.visibility= View.GONE
-                showSuccessDialog()
-            }
-        })
+        ApiServices.uploadImageEmbToAIServer(
+            uploadImageAIServerREQ,
+            object : UploadImageEmbListener {
+                override fun success(isSuccess: Boolean, message: String, regRP: RegRP) {
+                    Const().showToast(this@MainActivity, "$message")
+                    binding.progressBar.visibility = View.GONE
+                    showSuccessDialog(regRP)
+                }
+            })
     }
-
 
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
-    private val requestPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        if (allPermissionsGranted()) {
-            startCamera()
-        } else {
-            Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show()
-            finish()
+    private val requestPermissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            if (allPermissionsGranted()) {
+                startCamera()
+            } else {
+                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT)
+                    .show()
+                finish()
+            }
         }
-    }
 
     private fun getOutputDirectory(): File {
         val mediaDir = externalMediaDirs.firstOrNull()?.let {

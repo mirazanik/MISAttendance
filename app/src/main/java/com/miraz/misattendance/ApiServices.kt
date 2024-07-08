@@ -1,6 +1,5 @@
 package com.miraz.misattendance
 
-import android.util.Log
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -9,7 +8,6 @@ import org.json.JSONException
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
-import retrofit2.HttpException
 import retrofit2.Response
 
 
@@ -80,48 +78,22 @@ object ApiServices {
 
 
         val service: ApiInterface =
-            RetrofitHelper.getInstance("http://192.168.101.230:6970/")
+            RetrofitHelper.getInstance("http://116.68.205.78:6970/")
                 .create(ApiInterface::class.java)
         service.registerUser(namePart, idPart, department, designation, file)
             .enqueue(object :
-                Callback<RequestBody> {
+                Callback<RegRP> {
                 override fun onResponse(
-                    call: Call<RequestBody>,
-                    response: Response<RequestBody>,
+                    call: Call<RegRP>,
+                    response: Response<RegRP>,
                 ) {
-                    val errorBody = response.errorBody()?.string()
-                    try {
-                        val errorJson = errorBody?.let { JSONObject(it) }
-                        uploadImageEmbListener.success(false, "failed! $errorJson")
-                    } catch (e: JSONException) {
-                        uploadImageEmbListener.success(
-                            false,
-                            "Unable to parse error message."
-                        )
+                    if (response.isSuccessful && response.body() != null) {
+                        uploadImageEmbListener.success(true, "Status Code : ${response.body()!!.status_code} And Response : ${response.body()!!.message}",response.body()!!)
                     }
                 }
 
-                override fun onFailure(call: Call<RequestBody>, t: Throwable) {
-                    if (t is HttpException) {
-                        val errorBody = t.response()?.errorBody()?.string()
-                        if (errorBody != null) {
-                            try {
-                                val jsonObject = JSONObject(errorBody)
-                                uploadImageEmbListener.success(
-                                    false,
-                                    "Error JSON: $jsonObject"
-                                )
-                                Log.d("UPLOAD", "Error JSON: $jsonObject")
-                            } catch (e: Exception) {
-                                Log.e("UPLOAD", "Error parsing JSON in onFailure", e)
-                                uploadImageEmbListener.success(
-                                    false,
-                                    e.toString()
-                                )
-                            }
-                        }
-                    }
-
+                override fun onFailure(call: Call<RegRP>, t: Throwable) {
+                    uploadImageEmbListener.success(false, "failed! GPU server Connection Failed", regRP = RegRP("GPU server Connection Failed",404) )
                 }
             })
     }
