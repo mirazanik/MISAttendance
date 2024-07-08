@@ -102,7 +102,6 @@ object ApiServices {
                 }
 
                 override fun onFailure(call: Call<RequestBody>, t: Throwable) {
-
                     if (t is HttpException) {
                         val errorBody = t.response()?.errorBody()?.string()
                         if (errorBody != null) {
