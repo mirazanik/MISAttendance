@@ -42,9 +42,10 @@ class VisitActivity : AppCompatActivity() {
     private fun startPeriodicRefresh() {
         refreshRunnable = object : Runnable {
             override fun run() {
+
                 refreshData()
                 startCountdown()
-                handler.postDelayed(this, 32000) // Schedule the next refresh after 10 seconds
+                handler.postDelayed(this, 20000) // Schedule the next refresh after 10 seconds
             }
         }
         handler.post(refreshRunnable as Runnable) // Start the first refresh
@@ -54,7 +55,7 @@ class VisitActivity : AppCompatActivity() {
         if (countDownTimer != null) {
             countDownTimer?.cancel()
         }
-        countDownTimer = object : CountDownTimer(30000, 1000) {
+        countDownTimer = object : CountDownTimer(18000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 binding.countdownTimer.setText("Next refresh in " + millisUntilFinished / 1000 + "s")
             }

@@ -4,14 +4,12 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
@@ -21,68 +19,58 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
-import com.miraz.misattendance.databinding.ActivityMainBinding
+import com.miraz.misattendance.databinding.ActivityCaptureImageBinding
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class MainActivity : AppCompatActivity() {
-    private lateinit var cameraExecutor: ExecutorService
-    private lateinit var imageCapture: ImageCapture
+class CaptureImageActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
-    lateinit var binding: ActivityMainBinding
+    private lateinit var imageCapture: ImageCapture
+    private lateinit var cameraExecutor: ExecutorService
     private var lensFacing = CameraSelector.LENS_FACING_BACK
+    lateinit var photoFile: File
+
+
+    lateinit var binding: ActivityCaptureImageBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityCaptureImageBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         previewView = findViewById(R.id.previewView)
-        val captureButton: Button = findViewById(R.id.captureButton)
-
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-
-
-        if (allPermissionsGranted()) {
+        // Request camera permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
             startCamera()
         } else {
-            requestPermissions.launch(REQUIRED_PERMISSIONS)
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
 
-        captureButton.setOnClickListener { takePhoto() }
-
+        binding.captureButton.setOnClickListener { takePhoto() }
+        binding.btnCameraRotate.setOnClickListener { rotateCamera() }
 
         binding.visitList.setOnClickListener {
             val intent = Intent(this, VisitActivity::class.java)
             startActivity(intent)
         }
-
-        binding.btnCameraRotate.setOnClickListener { rotateCamera() }
     }
 
-    private fun rotateCamera() {
-        lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-            CameraSelector.LENS_FACING_FRONT
-        } else {
-            CameraSelector.LENS_FACING_BACK
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                startCamera()
+            } else {
+                // Permission denied
+            }
         }
-
-        startCamera()
-    }
-
-    private fun showSuccessDialog(regRP: RegRP) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Status: ${regRP.status_code}")
-        builder.setMessage(" ${regRP.message}")
-        builder.setPositiveButton("OK") { dialog, _ ->
-            dialog.dismiss()
-        }
-        val dialog: AlertDialog = builder.create()
-        dialog.show()
-    }
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -98,8 +86,12 @@ class MainActivity : AppCompatActivity() {
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
-                    this, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
-            } catch(exc: Exception) {
+                    this,
+                    CameraSelector.Builder().requireLensFacing(lensFacing).build(),
+                    preview,
+                    imageCapture
+                )
+            } catch (exc: Exception) {
                 Log.e("MainActivity", "Use case binding failed", exc)
             }
 
@@ -107,23 +99,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePhoto() {
-        val photoFile = File(getOutputDirectory(), "${System.currentTimeMillis()}.jpg")
+        photoFile = File(
+            externalMediaDirs.firstOrNull(),
+            SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+                .format(System.currentTimeMillis()) + ".jpg"
+        )
+
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
         imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exc: ImageCaptureException) {
-                    Log.e("CameraXApp", "Photo capture failed: ${exc.message}", exc)
+                    Log.e("MainActivity", "Photo capture failed: ${exc.message}", exc)
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val savedUri = Uri.fromFile(photoFile)
-                    Toast.makeText(
-                        baseContext,
-                        "Photo capture succeeded: $savedUri",
-                        Toast.LENGTH_SHORT
-                    ).show()
                     showStaffInfoDialog(photoFile)
                 }
             }
@@ -138,7 +130,7 @@ class MainActivity : AppCompatActivity() {
         val etDepartment: EditText = dialogView.findViewById(R.id.etDepartment)
         val etDesignation: EditText = dialogView.findViewById(R.id.etDesignation)
         val btnSubmit: Button = dialogView.findViewById(R.id.btnSubmit)
-
+        val btnCancel: Button = dialogView.findViewById(R.id.btnCancel)
 
         etName.setText("test11")
         etStaffId.setText("123456789")
@@ -147,6 +139,7 @@ class MainActivity : AppCompatActivity() {
         // Create the dialog
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
+            .setCancelable(false)
             .create()
 
         // Set the submit button click listener
@@ -162,11 +155,19 @@ class MainActivity : AppCompatActivity() {
             // Dismiss the dialog
             dialog.dismiss()
         }
+        // Set the submit button click listener
+        btnCancel.setOnClickListener {
+
+            photoFile.delete()
+            // Dismiss the dialog
+            dialog.dismiss()
+        }
+
 
         // Show the dialog
         dialog.show()
-    }
 
+    }
 
     private fun handleStaffInfo(
         name: String,
@@ -197,34 +198,47 @@ class MainActivity : AppCompatActivity() {
             uploadImageAIServerREQ,
             object : UploadImageEmbListener {
                 override fun success(isSuccess: Boolean, message: String, regRP: RegRP) {
-                    Const().showToast(this@MainActivity, "$message")
+                    Const().showToast(this@CaptureImageActivity, "$message")
                     binding.progressBar.visibility = View.GONE
                     showSuccessDialog(regRP)
                 }
             })
     }
 
+    private fun showSuccessDialog(regRP: RegRP) {
 
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+
+        photoFile.delete()
+        Log.d("MainActivity", "Photo deleted: ${photoFile.absolutePath}")
+
+
+        val builder = AlertDialog.Builder(this)
+//        builder.setTitle("Status: ${regRP.status_code}")
+        builder.setTitle("")
+        builder.setMessage(regRP.message)
+        builder.setPositiveButton("Cancel") { dialog, _ ->
+            dialog.dismiss()
+        }
+
+        builder.setNegativeButton("View List") { dialog, _ ->
+
+            val intent = Intent(this, VisitActivity::class.java)
+            startActivity(intent)
+            dialog.dismiss()
+        }
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
     }
 
-    private val requestPermissions =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-            if (allPermissionsGranted()) {
-                startCamera()
-            } else {
-                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT)
-                    .show()
-                finish()
-            }
+
+    private fun rotateCamera() {
+        lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+            CameraSelector.LENS_FACING_FRONT
+        } else {
+            CameraSelector.LENS_FACING_BACK
         }
 
-    private fun getOutputDirectory(): File {
-        val mediaDir = externalMediaDirs.firstOrNull()?.let {
-            File(it, resources.getString(R.string.app_name)).apply { mkdirs() }
-        }
-        return if (mediaDir != null && mediaDir.exists()) mediaDir else filesDir
+        startCamera()
     }
 
     override fun onDestroy() {
@@ -233,6 +247,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
+        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
     }
 }

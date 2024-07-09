@@ -4,6 +4,7 @@ import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +15,12 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
-
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 
 class VisitAdapter(val userSearchRP: List<DataXXXX>) :
     RecyclerView.Adapter<VisitAdapter.ViewHolder>() {
@@ -45,11 +51,18 @@ class VisitAdapter(val userSearchRP: List<DataXXXX>) :
         val userDetails = userSearchRP[position]
 
         holder.tvCustomerName.text = userDetails.customer_id
-        holder.tvLastVisitedDate.text = userDetails.last_visited_date
+
+        try {
+            holder.tvLastVisitedDate.text = timeDifference(userDetails.last_visited_date)
+        } catch (e: Exception) {
+            Log.e("TAG", "onBindViewHolder: $e")
+            holder.tvLastVisitedDate.text = "Invalid Date"
+        }
 
         holder.cardView.setOnClickListener {
             showDialog(userDetails)
         }
+
 
         Picasso.get().load(userDetails.image_url).into(holder.userImage);
 
@@ -77,7 +90,65 @@ class VisitAdapter(val userSearchRP: List<DataXXXX>) :
         val url = userDetails.image_url
         Picasso.get().load(url).placeholder(R.drawable.images).into(dialogImageView)
         dialogStdName.text = userDetails.customer_id
-        dialogStdRoll.text = userDetails.last_visited_date
+        dialogStdRoll.text = timeDifference(userDetails.last_visited_date)
         dialog.show()
     }
+
+    fun timeDifference(targetDateTime: String): String {
+        // Adjust the date format to match the provided date string without nanoseconds
+        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault())
+        formatter.timeZone = TimeZone.getTimeZone("UTC")
+        var target: Date? = null
+        try {
+            val trimmedDateTime = targetDateTime.substring(0, targetDateTime.indexOf('.') + 4) + "Z"
+            target = formatter.parse(trimmedDateTime)
+        } catch (e: ParseException) {
+            e.printStackTrace()
+        }
+
+        if (target == null) {
+            return "Invalid date format"
+        }
+
+        val now = Date()
+
+        val diffInMillis = now.time - target.time
+
+        val years = TimeUnit.MILLISECONDS.toDays(diffInMillis) / 365
+        val remainingDaysAfterYears = TimeUnit.MILLISECONDS.toDays(diffInMillis) % 365
+
+        val months = remainingDaysAfterYears / 30
+        val remainingDaysAfterMonths = remainingDaysAfterYears % 30
+
+        val days = remainingDaysAfterMonths
+
+        val hours = TimeUnit.MILLISECONDS.toHours(diffInMillis) % 24
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(diffInMillis) % 60
+
+        val result = StringBuilder()
+
+        if (years > 0) {
+            result.append("$years years, ")
+        }
+        if (months > 0) {
+            result.append("$months months, ")
+        }
+        if (days > 0) {
+            result.append("$days days, ")
+        }
+        if (hours > 0) {
+            result.append("$hours hours, ")
+        }
+        if (minutes > 0) {
+            result.append("$minutes minutes")
+        }
+
+        // Remove trailing comma and space if they exist
+        if (result.endsWith(", ")) {
+            result.setLength(result.length - 2)
+        }
+
+        return if (result.isEmpty()) "Last visit 0 minutes ago" else "Last visit $result ago"
+    }
+
 }
