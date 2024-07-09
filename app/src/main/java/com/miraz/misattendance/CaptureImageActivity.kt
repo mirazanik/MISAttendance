@@ -132,10 +132,10 @@ class CaptureImageActivity : AppCompatActivity() {
         val btnSubmit: Button = dialogView.findViewById(R.id.btnSubmit)
         val btnCancel: Button = dialogView.findViewById(R.id.btnCancel)
 
-        etName.setText("test11")
-        etStaffId.setText("123456789")
+        etName.setText("")
+        etStaffId.setText("")
         etDepartment.setText("MIS")
-        etDesignation.setText("SE")
+        etDesignation.setText("Engineer")
         // Create the dialog
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
@@ -149,11 +149,20 @@ class CaptureImageActivity : AppCompatActivity() {
             val department = etDepartment.text.toString()
             val designation = etDesignation.text.toString()
 
-            // Handle the input values here, e.g., save to database, update UI, etc.
-            handleStaffInfo(name, staffId, department, designation, photoFile)
+            if(name==""||staffId==""||department==""||designation=="")
+            {
+                Const().showToast(this@CaptureImageActivity, "Enter Valid Data Please")
+            }
+            else
+            {
 
-            // Dismiss the dialog
-            dialog.dismiss()
+                // Handle the input values here, e.g., save to database, update UI, etc.
+                handleStaffInfo(name, staffId, department, designation, photoFile)
+
+                // Dismiss the dialog
+                dialog.dismiss()
+            }
+
         }
         // Set the submit button click listener
         btnCancel.setOnClickListener {
