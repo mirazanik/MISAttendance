@@ -6,5 +6,6 @@ data class DataXXXX(
     val image_url: String,
     val last_visited_date: String,
     val total_visited: Int,
-    val visited_date: String
+    val visited_date: String,
+    val live_image_url: String
 )

@@ -36,7 +36,7 @@ class VisitActivity : AppCompatActivity() {
         binding.swipeRefreshLayout.setOnRefreshListener(SwipeRefreshLayout.OnRefreshListener { refreshData() })
 
         // Start periodic refresh
-        startPeriodicRefresh();
+        //startPeriodicRefresh();
     }
 
     private fun startPeriodicRefresh() {

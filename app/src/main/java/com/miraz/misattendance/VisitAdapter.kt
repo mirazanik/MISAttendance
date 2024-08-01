@@ -32,6 +32,7 @@ class VisitAdapter(val userSearchRP: List<DataXXXX>) :
         var tvLastVisitedDate = itemView.findViewById<TextView>(R.id.tvCustomerLast)
         var userImage = itemView.findViewById<ImageView>(R.id.ivImage)
         var cardView = itemView.findViewById<CardView>(R.id.cardView)
+        var userImageLive = itemView.findViewById<ImageView>(R.id.ivImageLive)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -59,17 +60,21 @@ class VisitAdapter(val userSearchRP: List<DataXXXX>) :
             holder.tvLastVisitedDate.text = "Invalid Date"
         }
 
-        holder.cardView.setOnClickListener {
-            showDialog(userDetails)
+        holder.userImage.setOnClickListener {
+            showDialog(userDetails, false)
+        }
+
+        holder.userImageLive.setOnClickListener {
+            showDialog(userDetails, true)
         }
 
 
-        Picasso.get().load(userDetails.image_url).into(holder.userImage);
-
+        Picasso.get().load(userDetails.image_url).into(holder.userImage)
+        Picasso.get().load(userDetails.live_image_url).into(holder.userImageLive)
 
     }
 
-    private fun showDialog(userDetails: DataXXXX) {
+    private fun showDialog(userDetails: DataXXXX, isLive: Boolean) {
         val dialog = Dialog(context)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setContentView(R.layout.dialog_user_info)
@@ -87,10 +92,31 @@ class VisitAdapter(val userSearchRP: List<DataXXXX>) :
         createJobActivity.setOnClickListener { }
 
 
-        val url = userDetails.image_url
-        Picasso.get().load(url).placeholder(R.drawable.images).into(dialogImageView)
-        dialogStdName.text = userDetails.customer_id
-        dialogStdRoll.text = timeDifference(userDetails.last_visited_date)
+        if (isLive) {
+            val url = userDetails.live_image_url
+            Picasso.get().load(url).placeholder(R.drawable.images).into(dialogImageView)
+            dialogStdName.text = userDetails.customer_id
+            try {
+                dialogStdRoll.text = timeDifference(userDetails.last_visited_date)
+            } catch (e: Exception) {
+                Log.e("TAG", "onBindViewHolder: $e")
+                dialogStdRoll.text  = "Invalid Date"
+            }
+
+        } else {
+            val url = userDetails.image_url
+            Picasso.get().load(url).placeholder(R.drawable.images).into(dialogImageView)
+            dialogStdName.text = userDetails.customer_id
+            try {
+                dialogStdRoll.text = timeDifference(userDetails.last_visited_date)
+            } catch (e: Exception) {
+                Log.e("TAG", "onBindViewHolder: $e")
+                dialogStdRoll.text  = "Invalid Date"
+            }
+
+        }
+
+
         dialog.show()
     }
 

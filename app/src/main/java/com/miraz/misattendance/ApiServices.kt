@@ -76,7 +76,6 @@ object ApiServices {
             uploadImageAIServerREQ.image.name, filePart
         )
 
-
         val service: ApiInterface =
             RetrofitHelper.getInstance("http://116.68.205.78:6970/")
                 .create(ApiInterface::class.java)

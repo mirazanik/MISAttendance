@@ -32,8 +32,6 @@ class CaptureImageActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     lateinit var photoFile: File
-
-
     lateinit var binding: ActivityCaptureImageBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -155,23 +153,15 @@ class CaptureImageActivity : AppCompatActivity() {
             }
             else
             {
-
-                // Handle the input values here, e.g., save to database, update UI, etc.
                 handleStaffInfo(name, staffId, department, designation, photoFile)
-
-                // Dismiss the dialog
                 dialog.dismiss()
             }
-
         }
         // Set the submit button click listener
         btnCancel.setOnClickListener {
-
             photoFile.delete()
-            // Dismiss the dialog
             dialog.dismiss()
         }
-
 
         // Show the dialog
         dialog.show()
@@ -202,6 +192,7 @@ class CaptureImageActivity : AppCompatActivity() {
     private fun insertToAIServer(
         uploadImageAIServerREQ: UploadImageAIServerREQ
     ) {
+        binding.progressBar.visibility = View.VISIBLE
 
         ApiServices.uploadImageEmbToAIServer(
             uploadImageAIServerREQ,

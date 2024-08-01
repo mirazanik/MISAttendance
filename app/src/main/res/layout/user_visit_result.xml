@@ -1,8 +1,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:background="@color/colorLightCyan"
-    android:layout_height="80dp">
+    android:layout_height="80dp"
+    android:background="@color/colorLightCyan">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView"
@@ -56,12 +56,32 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:layout_marginRight="@dimen/_70sdp"
                     android:id="@+id/tvCustomerLast"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="@dimen/_10ssp" />
 
             </LinearLayout>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardFaceLive"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerInParent="true"
+                android:layout_marginTop="1dp"
+                android:layout_marginRight="16dp"
+                android:foregroundGravity="center"
+                app:cardCornerRadius="30dp"
+                app:cardElevation="16dp">
+
+                <ImageView
+                    android:id="@+id/ivImageLive"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:scaleType="centerCrop" />
+            </androidx.cardview.widget.CardView>
 
         </RelativeLayout>
 
